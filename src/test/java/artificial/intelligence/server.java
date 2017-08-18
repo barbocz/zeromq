@@ -38,11 +38,15 @@ public class server
             //System.out.println(messageParts[0]+","+messageParts[1]);
 
             switch (action) {
+                case "ping":
+                    request = "ok";
+                    System.out.println(action+" command received");
+                    break;
                 case "getIndicatorName":
                     //System.out.println(messageParts[0] + "," + messageParts[1]);
                     System.out.println(action+" command received");
                     request = MT4FileAccess.getIndicatorName("C:\\Program Files\\Global Prime\\MQL4\\Indicators",messageParts[1]);
-                    //System.out.println(request);
+                    System.out.println(request);
             }
 
 

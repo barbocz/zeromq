@@ -14,7 +14,8 @@ public class MT4FileAccess {
 
          String dirList="";
          for (File file : files) {
-             dirList+=","+file.getName().replace(".ex4","");
+             if (dirList.length()==0) dirList+=file.getName().replace(".ex4","");
+             else dirList+="|"+file.getName().replace(".ex4","");
          }
          //System.out.println(dirList);
          return(dirList);
