@@ -8,14 +8,29 @@ public class MT4FileAccess {
      public static String getIndicatorName (String directory,String prefix) {
 
          //String indicatorDir="C:\\Program Files\\Global Prime\\MQL4\\Indicators";
+
+         String directoryPrefix="";
+         String items[]=prefix.split("\\/");
+
+         if (items.length>1) {
+             for(int i=0; i<items.length-1; i++){
+                 directory+="\\"+items[i];
+                 directoryPrefix=items[i]+"/";
+             }
+             prefix=items[items.length-1];
+         }
+
+
+
          File dir = new File(directory);
          FilenameFilter select = new FileListFilter(prefix, "ex4");
          File[] files = dir.listFiles(select);
 
          String dirList="";
          for (File file : files) {
-             if (dirList.length()==0) dirList+=file.getName().replace(".ex4","");
-             else dirList+="|"+file.getName().replace(".ex4","");
+             String fileName=directoryPrefix+file.getName().replace(".ex4","");
+             if (dirList.length()==0) dirList+=fileName;
+             else dirList+="|"+fileName;
          }
          //System.out.println(dirList);
          return(dirList);
