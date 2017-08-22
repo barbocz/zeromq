@@ -31,22 +31,29 @@ public class server
 
             byte[] reply = socket.recv(0);
             String receivedMessage=new String(reply, ZMQ.CHARSET);
-            //System.out.println("Received " + ": [" + new String(reply, ZMQ.CHARSET) + "]");
+            System.out.println("MT4 message " + ": [" + new String(reply, ZMQ.CHARSET) + "]");
 
             String messageParts[]=receivedMessage.split("\\|");
             String action=messageParts[0];
-            //System.out.println(messageParts[0]+","+messageParts[1]);
+            //System.out.println("messageParts length: "+messageParts.length);
+            //if (messageParts.length==3) System.out.println(messageParts[0]+","+messageParts[1]+","+messageParts[2]);
 
             switch (action) {
                 case "ping":
                     request = "ok";
-                    System.out.println(action+" command received");
+                    //System.out.println(action+" command received");
                     break;
                 case "getIndicatorName":
                     //System.out.println(messageParts[0] + "," + messageParts[1]);
-                    System.out.println(action+" command received");
-                    request = MT4FileAccess.getIndicatorName("C:\\Program Files\\Global Prime\\MQL4\\Indicators",messageParts[1]);
+                    //System.out.println(action+" command received");
+                    request = MT4FileAccess.getIndicatorName(messageParts[1],messageParts[2]);
                     System.out.println(request);
+                    break;
+                case "train":
+                    //System.out.println(action+" command received");
+                    Classification.getIndicatorName(messageParts[1]);
+
+                    break;
             }
 
 

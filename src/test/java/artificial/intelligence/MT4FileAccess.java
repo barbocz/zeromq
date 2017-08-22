@@ -7,8 +7,6 @@ public class MT4FileAccess {
 
      public static String getIndicatorName (String directory,String prefix) {
 
-         //String indicatorDir="C:\\Program Files\\Global Prime\\MQL4\\Indicators";
-
          String directoryPrefix="";
          String items[]=prefix.split("\\/");
 
