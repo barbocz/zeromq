@@ -17,6 +17,7 @@ public class server
     {
 
         String request="";
+        Classification classification=new Classification("","","");
 
         //System.out.println(dirList);
 
@@ -39,19 +40,34 @@ public class server
             //if (messageParts.length==3) System.out.println(messageParts[0]+","+messageParts[1]+","+messageParts[2]);
 
             switch (action) {
-                case "ping":
+                case "init":
                     request = "ok";
+                    classification=new Classification(messageParts[1],messageParts[2],messageParts[3]);
                     //System.out.println(action+" command received");
                     break;
                 case "getIndicatorName":
                     //System.out.println(messageParts[0] + "," + messageParts[1]);
                     //System.out.println(action+" command received");
-                    request = MT4FileAccess.getIndicatorName(messageParts[1],messageParts[2]);
-                    System.out.println(request);
+                    request = classification.getIndicatorName(messageParts[1]);
+//                    System.out.println(request);
+                    break;
+                case "setStrategy":
+                    classification.setStrategy(messageParts[1]);
+                    break;
+                case "setModel":
+                    classification.setModel(messageParts[1]);
+                    classification.setClassifier();
+                    double[] feautures = new double[messageParts.length-2];
+                    for (int i = 0; i < feautures.length; i++) {
+                        feautures[i] = Double.parseDouble(messageParts[i+2]);
+                    }
+                    request = classification.classify(feautures);
+
                     break;
                 case "train":
                     //System.out.println(action+" command received");
-                    Classification.getIndicatorName(messageParts[1]);
+                    request = classification.train();
+                    //System.out.println(request);
 
                     break;
             }
