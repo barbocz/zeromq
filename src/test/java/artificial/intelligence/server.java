@@ -76,6 +76,9 @@ public class server {
                         }
                         request = classification.classify(feautures);
                         break;
+                    case "testClassify":
+                        request = classification.testClassify();
+                        break;
                 }
 
             } catch (Exception e) {

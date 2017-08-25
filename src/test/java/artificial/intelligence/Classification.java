@@ -41,42 +41,17 @@ public class Classification {
         this.period = period;
     }
 
-    public void setStrategy(String strategy) {
-        this.strategy = strategy;
-        //System.out.println("Strategy set:"+strategy);
-    }
-
-    public void copyStrategyToTester(String strategy) throws Exception{
-        Path path = Paths.get(terminalDirectory+"\\tester\\files\\Trainings");
-        Files.createDirectories(path);
-
-        Path FROM = Paths.get(terminalDirectory+"\\MQL4\\Files\\Trainings\\" +  strategy + ".txt");
-        Path TO = Paths.get(terminalDirectory+"\\tester\\files\\Trainings\\" +  strategy + ".txt");
-        //overwrite existing file, if exists
-        CopyOption[] options = new CopyOption[]{
-                StandardCopyOption.REPLACE_EXISTING,
-                StandardCopyOption.COPY_ATTRIBUTES
-        };
-        Files.copy(FROM, TO, options);
-    }
-
-
-
-    public void setModel(String model) {
-        this.model = model;
-        //System.out.println("model set:"+model);
-    }
-
     public static void main(String[] args) throws Exception {
 
         String tDir = "C:\\Program Files\\Global Prime";
         String tFile = "XAUUSD_15_log.arff";
         String tModel = "C:\\Program Files\\Global Prime\\MQL4\\Files\\TrainingSets\\XAUUSD_15_log_JRip.model";
 //        long startTime = System.currentTimeMillis();
-        Classification cl = new Classification("C:\\Program Files\\Global Prime", "XAUUSD", "15");
-        cl.setStrategy("Conji");
-        cl.setModel("JRip");
-        cl.copyStrategyToTester("Conji");
+        Classification cl = new Classification("C:\\Program Files\\Global Prime", "XAUUSD", "60");
+        cl.setStrategy("conjid");
+        cl.setModel("PART");
+        cl.testClassify();
+//        cl.copyStrategyToTester("Conji");
         //cl.getIndicatorName("Adm");
 //        cl.train();
 //        cl.setClassifier();
@@ -91,6 +66,32 @@ public class Classification {
 //        long elapsedTime = stopTime - startTime;
 //        System.out.println("elapsedTime: "+elapsedTime);
     }
+
+    public void setStrategy(String strategy) {
+        this.strategy = strategy;
+        //System.out.println("Strategy set:"+strategy);
+    }
+
+    public void copyStrategyToTester(String strategy) throws Exception {
+        Path path = Paths.get(terminalDirectory + "\\tester\\files\\Trainings");
+        Files.createDirectories(path);
+
+        Path FROM = Paths.get(terminalDirectory + "\\MQL4\\Files\\Trainings\\" + strategy + ".txt");
+        Path TO = Paths.get(terminalDirectory + "\\tester\\files\\Trainings\\" + strategy + ".txt");
+        //overwrite existing file, if exists
+        CopyOption[] options = new CopyOption[]{
+                StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.COPY_ATTRIBUTES
+        };
+        Files.copy(FROM, TO, options);
+    }
+
+
+    public void setModel(String model) {
+        this.model = model;
+        //System.out.println("model set:"+model);
+    }
+
 
     public String train() throws Exception {
 
@@ -157,6 +158,42 @@ public class Classification {
             returnMessage += String.format("%s: %d/%d (%.1f%%)", classifierKey, correctPrediction, totalPrediction, percent);
         }
         System.out.println(returnMessage);
+        return (returnMessage);
+    }
+
+    public String testClassify() throws Exception {
+
+        String returnMessage = "";
+        trainingSetModelFile = terminalDirectory + "\\MQL4\\Files\\TrainingSets\\" + symbol + "_" + period + "_" + strategy + "_" + model + ".model";
+        classifier = (Classifier) weka.core.SerializationHelper.read(trainingSetModelFile);
+        trainingSetFile = terminalDirectory + "\\MQL4\\Files\\TrainingSets\\" + symbol + "_" + period + "_" + strategy + "_temp.arff";
+        ConverterUtils.DataSource source = new ConverterUtils.DataSource(trainingSetFile);
+        Instances trainDataset = source.getDataSet();
+        //set class index to the last attribute
+        trainDataset.setClassIndex(trainDataset.numAttributes() - 1);
+        //loop through the new dataset and make predictions
+
+        int correctPrediction = 0;
+        int falsePrediction = 0;
+
+        for (int i = 0; i < trainDataset.numInstances(); i++) {
+            //get class double value for current instance
+            double actualValue = trainDataset.instance(i).classValue();
+
+            //get Instance object of current instance
+            Instance newInst = trainDataset.instance(i);
+            //call classifyInstance, which returns a double value for the class
+            double predictedValue = classifier.classifyInstance(newInst);
+            if ((actualValue == 0 && predictedValue == 0) || (actualValue == 1 && predictedValue == 1))
+                correctPrediction++;
+            if ((actualValue == 0 && predictedValue == 1) || (actualValue == 1 && predictedValue == 0) ||
+                    (actualValue == 2 && predictedValue == 0) || (actualValue == 2 && predictedValue == 1))
+                falsePrediction++;
+            //System.out.println(i+" - "+actualValue + " - " + predictedValue + "   ---- " + correctPrediction + "/" + falsePrediction);
+            returnMessage+=predictedValue+"|";
+
+        }
+
         return (returnMessage);
     }
 
