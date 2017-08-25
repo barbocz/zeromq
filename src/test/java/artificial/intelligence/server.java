@@ -10,14 +10,12 @@ import org.zeromq.ZMQ;
 import java.io.File;
 import java.io.FilenameFilter;
 
-public class server
-{
+public class server {
 
-    public static void main(String[] args) throws Exception
-    {
+    public static void main(String[] args) throws Exception {
 
-        String request="";
-        Classification classification=new Classification("","","");
+        String request = "";
+        Classification classification = new Classification("", "", "");
 
         //System.out.println(dirList);
 
@@ -31,45 +29,57 @@ public class server
         while (!Thread.currentThread().isInterrupted()) {
 
             byte[] reply = socket.recv(0);
-            String receivedMessage=new String(reply, ZMQ.CHARSET);
+            String receivedMessage = new String(reply, ZMQ.CHARSET);
             System.out.println("MT4 message " + ": [" + new String(reply, ZMQ.CHARSET) + "]");
 
-            String messageParts[]=receivedMessage.split("\\|");
-            String action=messageParts[0];
+            String messageParts[] = receivedMessage.split("\\|");
+            String action = messageParts[0];
             //System.out.println("messageParts length: "+messageParts.length);
             //if (messageParts.length==3) System.out.println(messageParts[0]+","+messageParts[1]+","+messageParts[2]);
 
-            switch (action) {
-                case "init":
-                    request = "ok";
-                    classification=new Classification(messageParts[1],messageParts[2],messageParts[3]);
-                    //System.out.println(action+" command received");
-                    break;
-                case "getIndicatorName":
-                    //System.out.println(messageParts[0] + "," + messageParts[1]);
-                    //System.out.println(action+" command received");
-                    request = classification.getIndicatorName(messageParts[1]);
+            request = "Problem occured during Server processing";
+            try {
+
+                switch (action) {
+                    case "init":
+                        request = "ok";
+                        classification = new Classification(messageParts[1], messageParts[2], messageParts[3]);
+                        //System.out.println(action+" command received");
+                        break;
+                    case "getIndicatorName":
+                        //System.out.println(messageParts[0] + "," + messageParts[1]);
+                        //System.out.println(action+" command received");
+                        request = classification.getIndicatorName(messageParts[1]);
 //                    System.out.println(request);
-                    break;
-                case "setStrategy":
-                    classification.setStrategy(messageParts[1]);
-                    break;
-                case "setModel":
-                    classification.setModel(messageParts[1]);
-                    classification.setClassifier();
-                    double[] feautures = new double[messageParts.length-2];
-                    for (int i = 0; i < feautures.length; i++) {
-                        feautures[i] = Double.parseDouble(messageParts[i+2]);
-                    }
-                    request = classification.classify(feautures);
+                        break;
+                    case "setStrategy":
+                        classification.setStrategy(messageParts[1]);
+                        break;
+                    case "copyStrategyToTester":
+                        classification.copyStrategyToTester(messageParts[1]);
+                        break;
+                    case "setModel":
+                        classification.setModel(messageParts[1]);
+                        classification.setClassifier();
+                        break;
+                    case "train":
+                        //System.out.println(action+" command received");
+                        request = classification.train();
+                        //System.out.println(request);
 
-                    break;
-                case "train":
-                    //System.out.println(action+" command received");
-                    request = classification.train();
-                    //System.out.println(request);
+                        break;
 
-                    break;
+                    case "classify":
+                        double[] feautures = new double[messageParts.length - 1];
+                        for (int i = 0; i < feautures.length; i++) {
+                            feautures[i] = Double.parseDouble(messageParts[i + 1]);
+                        }
+                        request = classification.classify(feautures);
+                        break;
+                }
+
+            } catch (Exception e) {
+                System.out.println("Exception: " + e.toString());
             }
 
 

@@ -14,6 +14,13 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.HashMap;
 
+import java.io.IOException;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+
 
 public class Classification {
 
@@ -39,6 +46,22 @@ public class Classification {
         //System.out.println("Strategy set:"+strategy);
     }
 
+    public void copyStrategyToTester(String strategy) throws Exception{
+        Path path = Paths.get(terminalDirectory+"\\tester\\files\\Trainings");
+        Files.createDirectories(path);
+
+        Path FROM = Paths.get(terminalDirectory+"\\MQL4\\Files\\Trainings\\" +  strategy + ".txt");
+        Path TO = Paths.get(terminalDirectory+"\\tester\\files\\Trainings\\" +  strategy + ".txt");
+        //overwrite existing file, if exists
+        CopyOption[] options = new CopyOption[]{
+                StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.COPY_ATTRIBUTES
+        };
+        Files.copy(FROM, TO, options);
+    }
+
+
+
     public void setModel(String model) {
         this.model = model;
         //System.out.println("model set:"+model);
@@ -51,17 +74,19 @@ public class Classification {
         String tModel = "C:\\Program Files\\Global Prime\\MQL4\\Files\\TrainingSets\\XAUUSD_15_log_JRip.model";
 //        long startTime = System.currentTimeMillis();
         Classification cl = new Classification("C:\\Program Files\\Global Prime", "XAUUSD", "15");
-        cl.setStrategy("log");
+        cl.setStrategy("Conji");
         cl.setModel("JRip");
+        cl.copyStrategyToTester("Conji");
         //cl.getIndicatorName("Adm");
-        cl.train();
-        cl.setClassifier();
+//        cl.train();
+//        cl.setClassifier();
+//        cl.getIndicatorName("AI/Conjunction/H");
+//
+//        double[] instanceValue1 = new double[2];
+//        instanceValue1[0] = 1265.87100;
+//        instanceValue1[1] = 2.50000;
 
-        double[] instanceValue1 = new double[2];
-        instanceValue1[0] = 1265.87100;
-        instanceValue1[1] = 2.50000;
-
-        cl.classify(instanceValue1);
+//        cl.classify(instanceValue1);
 //        long stopTime = System.currentTimeMillis();
 //        long elapsedTime = stopTime - startTime;
 //        System.out.println("elapsedTime: "+elapsedTime);
@@ -195,21 +220,23 @@ public class Classification {
         if (items.length > 1) {
             for (int i = 0; i < items.length - 1; i++) {
                 indicatorDirectory += "\\" + items[i];
-                directoryPrefix = items[i] + "/";
+                directoryPrefix += items[i] + "/";
             }
             prefix = items[items.length - 1];
         }
+
         File dir = new File(indicatorDirectory);
         FilenameFilter select = new MT4FileAccess.FileListFilter(prefix, "ex4");
         File[] files = dir.listFiles(select);
 
         String dirList = "";
         for (File file : files) {
+
             String fileName = directoryPrefix + file.getName().replace(".ex4", "");
             if (dirList.length() == 0) dirList += fileName;
             else dirList += "|" + fileName;
         }
-//        System.out.println(dirList);
+        //System.out.println(dirList);
         return (dirList);
     }
 
