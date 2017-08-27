@@ -54,17 +54,21 @@ public class server {
                         break;
                     case "setStrategy":
                         classification.setStrategy(messageParts[1]);
+                        request = "ok";
                         break;
                     case "copyStrategyToTester":
                         classification.copyStrategyToTester(messageParts[1]);
+                        request = "ok";
                         break;
                     case "setModel":
                         classification.setModel(messageParts[1]);
                         classification.setClassifier();
+                        request = "ok";
                         break;
                     case "train":
                         //System.out.println(action+" command received");
                         request = classification.train();
+
                         //System.out.println(request);
 
                         break;
@@ -76,13 +80,14 @@ public class server {
                         }
                         request = classification.classify(feautures);
                         break;
-                    case "testClassify":
-                        request = classification.testClassify();
+                    case "tempClassify":
+                        request = classification.tempClassify(messageParts[1]);
                         break;
                 }
 
             } catch (Exception e) {
                 System.out.println("Exception: " + e.toString());
+                request = e.toString();
             }
 
 

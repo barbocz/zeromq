@@ -1,6 +1,8 @@
 package artificial.intelligence;
 
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -13,6 +15,15 @@ public class test {
         String tDir="C:\\Program Files\\Global Prime\\MQL4\\Files\\TrainingSets";
         String tFile="XAUUSD_15_log.arff";
         String tModel="C:\\Program Files\\Global Prime\\MQL4\\Files\\TrainingSets\\XAUUSD_15_log_JRip.model";
+
+        try{
+            PrintWriter writer = new PrintWriter("C:\\Program Files\\Global Prime1\\MQL4\\Files\\TrainingSets\\test.txt", "UTF-8");
+            writer.println("The first line");
+            writer.println("The second line");
+            writer.close();
+        } catch (IOException e) {
+            // do something
+        }
 
 //        Classification cl=new Classification();
 //        cl.setClassifier(tModel);

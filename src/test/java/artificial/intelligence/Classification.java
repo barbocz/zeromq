@@ -12,6 +12,7 @@ import weka.classifiers.Classifier;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.PrintWriter;
 import java.util.HashMap;
 
 import java.io.IOException;
@@ -43,17 +44,18 @@ public class Classification {
 
     public static void main(String[] args) throws Exception {
 
-        String tDir = "C:\\Program Files\\Global Prime";
+        String tDir = "C:\\Program Files\\Global Prime1";
         String tFile = "XAUUSD_15_log.arff";
-        String tModel = "C:\\Program Files\\Global Prime\\MQL4\\Files\\TrainingSets\\XAUUSD_15_log_JRip.model";
+        String tModel = "C:\\Program Files\\Global Prime1\\MQL4\\Files\\TrainingSets\\XAUUSD_15_log_JRip.model";
 //        long startTime = System.currentTimeMillis();
-        Classification cl = new Classification("C:\\Program Files\\Global Prime", "XAUUSD", "60");
+        Classification cl = new Classification("C:\\Program Files\\Global Prime1", "XAUUSD", "60");
         cl.setStrategy("conjid");
         cl.setModel("PART");
-        cl.testClassify();
-//        cl.copyStrategyToTester("Conji");
+        cl.copyStrategyToTester("conjid");
+        //cl.tempClassify("test");
+
         //cl.getIndicatorName("Adm");
-//        cl.train();
+        cl.train();
 //        cl.setClassifier();
 //        cl.getIndicatorName("AI/Conjunction/H");
 //
@@ -97,10 +99,15 @@ public class Classification {
 
         String returnMessage = "";
         trainingSetFile = terminalDirectory + "\\MQL4\\Files\\TrainingSets\\" + symbol + "_" + period + "_" + strategy + ".arff";
+        System.out.println("trainingSetFile: "+trainingSetFile);
         ConverterUtils.DataSource source = new ConverterUtils.DataSource(trainingSetFile);
         Instances trainDataset = source.getDataSet();
-        //set class index to the last attribute
+
+           //set class index to the last attribute
+//        trainDataset.remove(1);
         trainDataset.setClassIndex(trainDataset.numAttributes() - 1);
+        int dateTimeIndex=trainDataset.numAttributes() - 2;
+
 
         //build model
         PART partClassifier = new PART();
@@ -131,16 +138,19 @@ public class Classification {
             String classifierKey = classifier.getClass().getSimpleName();
             trainingSetModelFile = terminalDirectory + "\\MQL4\\Files\\TrainingSets\\" + symbol + "_" + period + "_" + strategy + "_" + classifierKey + ".model";
             weka.core.SerializationHelper.write(trainingSetModelFile, classifier);
+            PrintWriter writer = new PrintWriter(terminalDirectory+"\\tester\\files\\"
+                    + symbol + "_" + period + "_" + strategy + "_" + classifierKey+".txt");
 
             int correctPrediction = 0;
             int falsePrediction = 0;
 
             for (int i = 0; i < trainDataset.numInstances(); i++) {
                 //get class double value for current instance
-                double actualValue = trainDataset.instance(i).classValue();
+                Instance newInst = trainDataset.instance(i);
+                double actualValue = newInst.classValue();
 
                 //get Instance object of current instance
-                Instance newInst = trainDataset.instance(i);
+
                 //call classifyInstance, which returns a double value for the class
                 double predictedValue = classifier.classifyInstance(newInst);
                 if ((actualValue == 0 && predictedValue == 0) || (actualValue == 1 && predictedValue == 1))
@@ -149,24 +159,29 @@ public class Classification {
                         (actualValue == 2 && predictedValue == 0) || (actualValue == 2 && predictedValue == 1))
                     falsePrediction++;
 //                System.out.println(actualValue+" - "+predictedValue+"   ---- "+correctPrediction+"/"+falsePrediction);
+                writer.println(String.format("%s|%s|%s",newInst.value(dateTimeIndex),actualValue,predictedValue));
+                //System.out.println(String.format("%s|%s|%s%%",new Double(newInst.value(dateTimeIndex)).toString(),actualValue,predictedValue));
 
 
             }
+            writer.close();
             int totalPrediction = correctPrediction + falsePrediction;
             double percent = 100 * (double) correctPrediction / totalPrediction;
             if (returnMessage.length() > 0) returnMessage += "|";
             returnMessage += String.format("%s: %d/%d (%.1f%%)", classifierKey, correctPrediction, totalPrediction, percent);
         }
+
         System.out.println(returnMessage);
         return (returnMessage);
+
     }
 
-    public String testClassify() throws Exception {
+    public String tempClassify(String type) throws Exception {
 
         String returnMessage = "";
-        trainingSetModelFile = terminalDirectory + "\\MQL4\\Files\\TrainingSets\\" + symbol + "_" + period + "_" + strategy + "_" + model + ".model";
-        classifier = (Classifier) weka.core.SerializationHelper.read(trainingSetModelFile);
-        trainingSetFile = terminalDirectory + "\\MQL4\\Files\\TrainingSets\\" + symbol + "_" + period + "_" + strategy + "_temp.arff";
+//        trainingSetModelFile = terminalDirectory + "\\MQL4\\Files\\TrainingSets\\" + symbol + "_" + period + "_" + strategy + "_" + model + ".model";
+//        classifier = (Classifier) weka.core.SerializationHelper.read(trainingSetModelFile);
+        trainingSetFile = terminalDirectory + "\\MQL4\\Files\\TrainingSets\\" + symbol + "_" + period + "_" + strategy + "_"+type+".arff";
         ConverterUtils.DataSource source = new ConverterUtils.DataSource(trainingSetFile);
         Instances trainDataset = source.getDataSet();
         //set class index to the last attribute
@@ -176,7 +191,7 @@ public class Classification {
         int correctPrediction = 0;
         int falsePrediction = 0;
 
-        for (int i = 0; i < trainDataset.numInstances(); i++) {
+        for (int i = trainDataset.numInstances()-1; i >-1 ; i--) {
             //get class double value for current instance
             double actualValue = trainDataset.instance(i).classValue();
 
@@ -193,7 +208,7 @@ public class Classification {
             returnMessage+=predictedValue+"|";
 
         }
-
+        //System.out.println("ms size: "+returnMessage.length());
         return (returnMessage);
     }
 
