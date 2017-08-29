@@ -16,21 +16,21 @@ public class test {
         String tFile="XAUUSD_15_log.arff";
         String tModel="C:\\Program Files\\Global Prime\\MQL4\\Files\\TrainingSets\\XAUUSD_15_log_JRip.model";
 
-        try{
-            PrintWriter writer = new PrintWriter("C:\\Program Files\\Global Prime1\\MQL4\\Files\\TrainingSets\\test.txt", "UTF-8");
-            writer.println("The first line");
-            writer.println("The second line");
-            writer.close();
-        } catch (IOException e) {
-            // do something
-        }
+//        try{
+//            PrintWriter writer = new PrintWriter("C:\\Program Files\\Global Prime1\\MQL4\\Files\\TrainingSets\\test.txt", "UTF-8");
+//            writer.println("The first line");
+//            writer.println("The second line");
+//            writer.close();
+//        } catch (IOException e) {
+//            // do something
+//        }
 
 //        Classification cl=new Classification();
 //        cl.setClassifier(tModel);
          //System.out.println("Result: "+cl.classify(1255.46750,1.0) );
 
         String t="2.1  ";
-        
+        if (t=="2.1  ") System.out.println("OK");
 
 //        System.out.println(Classification.train(tDir,tFile));
 

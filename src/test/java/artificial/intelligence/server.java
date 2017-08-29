@@ -14,6 +14,7 @@ public class server {
 
     public static void main(String[] args) throws Exception {
 
+        System.out.println("Java Server started...");
         String request = "";
         Classification classification = new Classification("", "", "");
 
@@ -57,7 +58,7 @@ public class server {
                         request = "ok";
                         break;
                     case "copyStrategyToTester":
-                        classification.copyStrategyToTester(messageParts[1]);
+                        classification.copyPredictionsToTester(messageParts[1]);
                         request = "ok";
                         break;
                     case "setModel":
@@ -81,7 +82,10 @@ public class server {
                         request = classification.classify(feautures);
                         break;
                     case "tempClassify":
-                        request = classification.tempClassify(messageParts[1]);
+                        request = classification.tempClassify();
+                        break;
+                    case "testClassify":
+                        request = classification.testClassify(messageParts[1]);
                         break;
                 }
 
