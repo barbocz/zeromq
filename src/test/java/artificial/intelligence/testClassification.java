@@ -54,7 +54,7 @@ public class testClassification {
 
 		}
 
-//		DataSource source = new DataSource("data/XAUUSD_1440_conjunctionBased.arff");
+//		DataSource source = new DataSource("data/XAUUS_1440_conjunctionBased.arff");
 //		Instances trainDataset = source.getDataSet();
 //		//set class index to the last attribute
 //		trainDataset.setClassIndex(trainDataset.numAttributes()-1);
@@ -66,7 +66,7 @@ public class testClassification {
 //		System.out.println(smo);
 //
 //		//load new dataset
-//		DataSource source1 = new DataSource("data/XAUUSD_1440_conjunctionBased.arff");
+//		DataSource source1 = new DataSource("data/XAUUS_1440_conjunctionBased.arff");
 //		Instances testDataset = source1.getDataSet();
 //		//set class index to the last attribute
 //		testDataset.setClassIndex(testDataset.numAttributes()-1);

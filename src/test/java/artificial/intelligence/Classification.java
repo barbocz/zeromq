@@ -2,6 +2,7 @@ package artificial.intelligence;
 
 import weka.classifiers.AbstractClassifier;
 import weka.classifiers.Evaluation;
+import weka.classifiers.lazy.IBk;
 import weka.classifiers.rules.DecisionTable;
 import weka.classifiers.rules.JRip;
 import weka.classifiers.rules.PART;
@@ -36,11 +37,12 @@ public class Classification {
     String period;
     String strategy;
     String model;
+    String aiType; // Classification=0, Regression=1
     String trainingSetFile;
     String trainingSetBaseFile;
     String trainingSetModelFile;
 
-    Classification(String terminalDirectory, String symbol, String period)  throws Exception {
+    Classification(String terminalDirectory, String symbol, String period) throws Exception {
         this.terminalDirectory = terminalDirectory;
         this.symbol = symbol;
         this.period = period;
@@ -61,16 +63,17 @@ public class Classification {
         String tFile = "XAUUSD_15_log.arff";
         String tModel = "C:\\Program Files\\Global Prime1\\MQL4\\Files\\TrainingSets\\XAUUSD_15_log_JRip.model";
 //        long startTime = System.currentTimeMillis();
-        Classification cl = new Classification("C:\\Program Files\\Global Prime", "XAUUSD", "60");
-        cl.setStrategy("conjid");
-        cl.setModel("PART");
+        Classification cl = new Classification("C:\\Program Files\\Global Prime", "EURUSD", "15");
+        cl.setStrategy("cluster");
+        //cl.setModel("IBk");
+        cl.train();
 //        cl.copyStrategyToTester("conjid");
         //cl.setClassifier();
         //cl.tempClassify();
 
         //cl.getIndicatorName("Adm");
         //cl.train();
-        cl.testClassify("J48");
+        cl.testClassify("PART");
 //        cl.setClassifier();
 //        cl.getIndicatorName("AI/Conjunction/H");
 //
@@ -209,6 +212,107 @@ public class Classification {
     }
 
 
+    public String trainReg() throws Exception {
+
+        String returnMessage = "";
+        trainingSetFile = terminalDirectory + "\\MQL4\\Files\\TrainingSets\\" + symbol + "_" + period + "_" + strategy + ".arff";
+        //System.out.println("trainingSetFile: "+trainingSetFile);
+        ConverterUtils.DataSource source = new ConverterUtils.DataSource(trainingSetFile);
+        Instances trainDataset = source.getDataSet();
+
+        //set class index to the last attribute
+//
+        trainDataset.setClassIndex(trainDataset.numAttributes() - 1);
+        int dateTimeIndex = trainDataset.numAttributes() - 2;
+        //        trainDataset.remove(dateTimeIndex);
+        trainDataset.deleteAttributeAt(dateTimeIndex);
+
+
+        //build model
+        IBk ibkClassifier = new IBk();
+        ibkClassifier.buildClassifier(trainDataset);
+
+
+//        RandomTree randomTreeClassifier = new RandomTree();
+//        randomTreeClassifier.buildClassifier(trainDataset);
+
+
+//        ClassificationViaRegression cvrClassifier=new ClassificationViaRegression();
+//        cvrClassifier.buildClassifier(trainDataset);
+
+        HashMap<String, AbstractClassifier> classifiers = new HashMap<String, AbstractClassifier>();
+        classifiers.put(ibkClassifier.getClass().getSimpleName(), ibkClassifier);
+
+//        classifiers.put(cvrClassifier.getClass().getSimpleName(), cvrClassifier);
+        //output model
+        //System.out.println(classifier);
+
+
+        //loop through the new dataset and make predictions
+
+        trainingSetFile = terminalDirectory + "\\MQL4\\Files\\TrainingSets\\" + symbol + "_" + period + "_" + strategy + "_test.arff";
+        //System.out.println("trainingSetFile: "+trainingSetFile);
+        source = new ConverterUtils.DataSource(trainingSetFile);
+        trainDataset = source.getDataSet();
+        Instances trainDatasetWithDate = source.getDataSet();
+        trainDataset.setClassIndex(trainDataset.numAttributes() - 1);
+
+        //        trainDataset.remove(dateTimeIndex);
+        trainDataset.deleteAttributeAt(dateTimeIndex);
+
+        for (AbstractClassifier classifier : classifiers.values()) {
+            String classifierKey = classifier.getClass().getSimpleName();
+            trainingSetModelFile = terminalDirectory + "\\MQL4\\Files\\TrainingSets\\" + symbol + "_" + period + "_" + strategy + "_" + classifierKey + ".model";
+            weka.core.SerializationHelper.write(trainingSetModelFile, classifier);
+            PrintWriter writerForIndicator = new PrintWriter(terminalDirectory + "\\MQL4\\Files\\Predictions\\"
+                    + symbol + "_" + period + "_" + strategy + "_" + classifierKey + ".txt");
+            PrintWriter writerForBackTester = new PrintWriter(terminalDirectory + "\\tester\\files\\Predictions\\"
+                    + symbol + "_" + period + "_" + strategy + "_" + classifierKey + ".txt");
+
+            int correctPrediction = 0;
+            int falsePrediction = 0;
+
+            for (int i = 0; i < trainDataset.numInstances(); i++) {
+                //get class double value for current instance
+                Instance newInst = trainDataset.instance(i);
+                Instance dateInst = trainDatasetWithDate.instance(i);
+
+                double actualValue = newInst.classValue();
+
+                //get Instance object of current instance
+
+                //call classifyInstance, which returns a double value for the class
+                double predictedValue = classifier.classifyInstance(newInst);
+                if ((actualValue == 0 && predictedValue == 0) || (actualValue == 1 && predictedValue == 1))
+                    correctPrediction++;
+                if ((actualValue == 0 && predictedValue == 1) || (actualValue == 1 && predictedValue == 0) ||
+                        (actualValue == 2 && predictedValue == 0) || (actualValue == 2 && predictedValue == 1))
+                    falsePrediction++;
+//                System.out.println(actualValue+" - "+predictedValue+"   ---- "+correctPrediction+"/"+falsePrediction);
+
+                String output = String.format("%s|%s|%s", dateInst.value(dateTimeIndex), actualValue, predictedValue);
+                writerForIndicator.println(output);
+                writerForBackTester.println(output);
+
+                //System.out.println(String.format("%s|%s|%s%%",new Double(newInst.value(dateTimeIndex)).toString(),actualValue,predictedValue));
+
+
+            }
+            writerForIndicator.close();
+            writerForBackTester.close();
+//            int totalPrediction = correctPrediction + falsePrediction;
+//            double percent = 100 * (double) correctPrediction / totalPrediction;
+//            if (returnMessage.length() > 0) returnMessage += "|";
+//            returnMessage += String.format("%s: %d/%d (%.1f%%)", classifierKey, correctPrediction, totalPrediction, percent);
+            returnMessage = "OK";
+        }
+
+        System.out.println(returnMessage);
+        return (returnMessage);
+
+    }
+
+
     public String testClassify(String testModel) throws Exception {
 
 
@@ -227,25 +331,25 @@ public class Classification {
 
         HashMap<String, Classifier> classifiers = new HashMap<String, Classifier>();
 
-        if (testModel.equals("ALL") || testModel.equals("DecisionTable") ) {
+        if (testModel.equals("ALL") || testModel.equals("DecisionTable")) {
             trainingSetModelFile = terminalDirectory + "\\MQL4\\Files\\TrainingSets\\" + symbol + "_" + period + "_" + strategy + "_DecisionTable.model";
             classifier = (Classifier) weka.core.SerializationHelper.read(trainingSetModelFile);
             classifiers.put(classifier.getClass().getSimpleName(), classifier);
         }
 
-        if (testModel.equals("ALL") || testModel.equals("PART") ) {
+        if (testModel.equals("ALL") || testModel.equals("PART")) {
             trainingSetModelFile = terminalDirectory + "\\MQL4\\Files\\TrainingSets\\" + symbol + "_" + period + "_" + strategy + "_PART.model";
             classifier = (Classifier) weka.core.SerializationHelper.read(trainingSetModelFile);
             classifiers.put(classifier.getClass().getSimpleName(), classifier);
         }
 
-        if (testModel.equals("ALL") || testModel.equals("JRip") ) {
+        if (testModel.equals("ALL") || testModel.equals("JRip")) {
             trainingSetModelFile = terminalDirectory + "\\MQL4\\Files\\TrainingSets\\" + symbol + "_" + period + "_" + strategy + "_JRip.model";
             classifier = (Classifier) weka.core.SerializationHelper.read(trainingSetModelFile);
             classifiers.put(classifier.getClass().getSimpleName(), classifier);
         }
 
-        if (testModel.equals("ALL") || testModel.equals("J48") ) {
+        if (testModel.equals("ALL") || testModel.equals("J48")) {
             trainingSetModelFile = terminalDirectory + "\\MQL4\\Files\\TrainingSets\\" + symbol + "_" + period + "_" + strategy + "_J48.model";
             classifier = (Classifier) weka.core.SerializationHelper.read(trainingSetModelFile);
             classifiers.put(classifier.getClass().getSimpleName(), classifier);
@@ -255,6 +359,7 @@ public class Classification {
         for (Classifier classifier : classifiers.values()) {
 
             String classifierKey = classifier.getClass().getSimpleName();
+
             PrintWriter writerForIndicator = new PrintWriter(terminalDirectory + "\\MQL4\\Files\\Predictions\\"
                     + symbol + "_" + period + "_" + strategy + "_" + classifierKey + ".txt");
             PrintWriter writerForBackTester = new PrintWriter(terminalDirectory + "\\tester\\files\\Predictions\\"
@@ -274,23 +379,30 @@ public class Classification {
                 Instance dateInst = trainDatasetWithDate.instance(i);
 
                 double predictedValue = classifier.classifyInstance(newInst);
+
+//                double[] predictionDistribution =
+//                        classifier.distributionForInstance(trainDataset.instance(i));
+
+
                 if ((actualValue == 0 && predictedValue == 0) || (actualValue == 1 && predictedValue == 1))
                     correctPrediction++;
                 if ((actualValue == 0 && predictedValue == 1) || (actualValue == 1 && predictedValue == 0) ||
                         (actualValue == 2 && predictedValue == 0) || (actualValue == 2 && predictedValue == 1))
                     falsePrediction++;
+
+
                 if (predictedValue == 0) totalBuyPrediction++;
                 if (predictedValue == 0 && actualValue == 0) correctBuyPrediction++;
                 if (predictedValue == 1) totalSellprediction++;
                 if (predictedValue == 1 && actualValue == 1) correctSellPrediction++;
 //                System.out.println(actualValue+" - "+predictedValue+"   ---- "+correctPrediction+"/"+falsePrediction);
-                String output=String.format("%s|%s|%s", dateInst.value(dateTimeIndex), actualValue, predictedValue);
+                String output = String.format("%s|%s|%s", dateInst.value(dateTimeIndex), actualValue, predictedValue);
                 writerForIndicator.println(output);
                 writerForBackTester.println(output);
-                //System.out.println(String.format("%s|%s|%s%%",new Double(newInst.value(dateTimeIndex)).toString(),actualValue,predictedValue));
-
-
             }
+            //System.out.println(String.format("%s|%s|%s%%",new Double(newInst.value(dateTimeIndex)).toString(),actualValue,predictedValue));
+
+
             writerForIndicator.close();
             writerForBackTester.close();
             int totalPrediction = correctPrediction + falsePrediction;
@@ -334,6 +446,8 @@ public class Classification {
             Instance newInst = trainDataset.instance(i);
             //call classifyInstance, which returns a double value for the class
             double predictedValue = classifier.classifyInstance(newInst);
+
+
             if ((actualValue == 0 && predictedValue == 0) || (actualValue == 1 && predictedValue == 1))
                 correctPrediction++;
             if ((actualValue == 0 && predictedValue == 1) || (actualValue == 1 && predictedValue == 0) ||
